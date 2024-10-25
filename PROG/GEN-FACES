@@ -1,0 +1,88 @@
+Print("RUNNING GEN-FACES\n");;
+# This program takes as argument a list of k faces 
+# defined as intersection of facets and having a support
+# by extreme rays.
+# Every facet is considered as a cone and its facets are faces
+# of dimension k-1.
+# output is a list of k-1 faces in OUTPUT/faces
+#
+# Note that the program use the usual GAP format files as support
+
+Read("WORK-PERM/Gap-DESC");;
+Read("WORK/SPANNING-ELT");;
+Read("WORK-PERM/CUTS");;
+Read("WORK-PERM/SCHLAFLI");;
+
+
+output:=OutputTextFile("OUTPUT/FacesData", true);;
+outputFrom:=OutputTextFile("OUTPUT/FacesFrom", true);;
+for iElt in [1..Length(ELT)]
+do
+  Print("Spanning from Element ",iElt,"\n");
+  FaceDefiningVector:=0;
+  for eVect in ELT[iElt]
+  do
+    FaceDefiningVector:=FaceDefiningVector+DESC[eVect];
+  od;
+  C:=[];
+  for eCut in CUTS
+  do
+    if eCut*FaceDefiningVector=0 then
+      Add(C, eCut);
+    fi;
+  od;
+  for eSch in SCHLAFLI
+  do
+    if eSch*FaceDefiningVector=0 then
+      Add(C, eSch);
+    fi;
+  od;
+  k:=RankMat(C);
+  LISTstatus:=[];
+  for iDesc in [1..Length(DESC)]
+  do
+    LISTstatus[iDesc]:=1;
+  od;
+  for eVect in ELT[iElt]
+  do
+    LISTstatus[eVect]:=2;
+  od;
+  for iDesc in [1..Length(DESC)]
+  do
+    if LISTstatus[iDesc]=1 then
+      TestMat:=[];
+      Vtest:=0;
+      for eC in C
+      do
+        if DESC[iDesc]*eC = 0 then
+          Vtest:=Vtest+eC;
+          Add(TestMat, eC);
+        fi;
+      od;
+      if (Length(TestMat) >= k-1) then
+        if RankMat(TestMat) = k-1 then
+          for jDesc in [1..Length(DESC)]
+          do
+            stt:=LISTstatus[jDesc];
+            if stt>0 then
+              if DESC[jDesc]*Vtest=0 then
+                if stt=1 then
+                  LISTstatus[jDesc]:=0;
+                fi;
+                AppendTo(output, " ", jDesc);
+              fi;
+            fi;
+          od;
+          AppendTo(output, "\n");
+          AppendTo(outputFrom, " ", iElt, "\n");
+        else
+          LISTstatus[iDesc]:=-1;
+        fi;
+      else
+        LISTstatus[iDesc]:=-2;
+      fi;
+    fi;
+  od;
+od;
+CloseStream(outputFrom);
+CloseStream(output);

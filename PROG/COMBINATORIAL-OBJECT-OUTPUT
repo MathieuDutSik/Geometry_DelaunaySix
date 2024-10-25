@@ -1,0 +1,226 @@
+Read("WORK-PERM/Gap-DESC");
+Read("WORK-PERM/Gap-DESC-Symbol");
+Read("WORK-PERM/Gap-CutSymbol");
+Read("WORK/ELT-CRACK");
+RequirePackage("grape");
+
+
+#
+#
+# This script is intended to the cracking of faces of HYPn that
+# are spanned by cuts.
+#
+# it will build some combinatorial objects related to this 
+# it should also work with CUTn for n<=6
+
+HypDim:=7;
+Print("RUNNING COMBINATORIAL-OBJECT-OUTPUT\n");
+
+DO:=[[1]];
+for iCol in [2..HypDim]
+do
+  C:=ShallowCopy(DO);
+  DO:=ShallowCopy([]);
+  for i in [1..Length(C)]
+  do
+    U:=ShallowCopy(C[i]);
+    V:=ShallowCopy(C[i]);
+    Add(U, 1);
+    Add(V, 0);
+    Add(DO, U);
+    Add(DO, V);
+  od;
+od;
+
+
+outputInvariant:=OutputTextFile("WORK/CutFacesInvariants", true);
+for iElt in [1..Length(ELT)]
+do
+  VECT:=ELT[iElt];
+  # searching the list of incident cuts
+  LISTINC:=ShallowCopy([]);
+  for eCut in CUTSYMB
+  do
+    test:=1;
+    for iVect in [1..Length(VECT)]
+    do
+      SPC:=eCut*DESCSYMB[VECT[iVect]];
+      if (SPC <> 0 and SPC <> 1) then
+        test:=0;
+      fi;
+    od;
+    if test=1 then
+      Add(LISTINC, eCut);
+    fi;
+  od;
+  # searching a non singular system in order to list vertices
+  # of the corresponding Delaunay polytope
+  V:=ShallowCopy([]);
+  for iCol in [1..HypDim]
+  do
+    V[iCol]:=1;
+  od;
+  SYSLIN:=ShallowCopy([]);
+  SYSLIN[1]:=V;
+  rank:=1;
+  position:=1;
+  while (rank < HypDim)
+  do
+    TS:=ShallowCopy(SYSLIN);
+    Add(TS, LISTINC[position]);
+    RC:=RankMat(TS);
+    if (RC > rank) then
+      SYSLIN:=TS;
+      rank:=RC;
+    fi;
+    position:=position+1;
+  od;
+  # creation of the list of vertices
+  TheVert:=ShallowCopy([]);
+  for eDO in DO
+  do
+    B:=SolutionMat(TransposedMat(SYSLIN), eDO);
+    test:=1;
+    for iCol in [1..HypDim]
+    do
+      if IsInt(B[iCol])=false then
+	test:=0;
+      fi;
+    od;
+    for eCut in LISTINC
+    do
+      SPC:=eCut*B;
+      if (SPC <> 0 and SPC <> 1) then
+        test:=0;
+      fi;
+    od;
+    if (test = 1) then
+      Add(TheVert, B);
+    fi;
+  od;
+  NBV:=Length(TheVert); # NumBer of Vertices
+  # now extending the cuts to get metrics on Vertices
+  LISTSET:=ShallowCopy([]);
+  for eCut in LISTINC
+  do
+    LST:=ShallowCopy([]);
+    for iVert in [1..NBV]
+    do
+      if (eCut*TheVert[iVert] = 0) then
+        Add(LST, iVert);
+      fi;
+    od;
+    Add(LISTSET, LST);
+  od;
+
+  NBC:=Length(LISTSET); # NumBer of Cuts
+  # now creating the graph
+  ListEDGE:=Combinations([1..NBV],2);
+  NBE:=Length(ListEDGE); # Number of Edges
+  NBN:=NBE+NBC+2; # NumBer of Nodes of the graph
+  ZEROLINE:=ShallowCopy([]);
+  for i in [1..NBN]
+  do
+    ZEROLINE[i]:=0;
+  od;
+  ZERMAT:=ShallowCopy([]);
+  for i in [1..NBN]
+  do
+    ZERMAT[i]:=ShallowCopy(ZEROLINE);
+  od;
+
+
+  for iEdge in [1..NBE]
+  do
+    for jEdge in [1..NBE]
+    do
+      if (iEdge<>jEdge and Length(Intersection(ListEDGE[iEdge], ListEDGE[jEdge]))=1) then
+	ZERMAT[iEdge][jEdge]:=1;
+      fi;
+    od;
+  od;
+  for iSet in [1..NBC]
+  do
+    U:=LISTSET[iSet];
+    for iEdge in [1..NBE]
+    do
+      EDGE:=ListEDGE[iEdge];
+      test1:=0;
+      test2:=0;
+      for iU in [1..Length(U)]
+      do
+        if (U[iU]=EDGE[1]) then
+          test1:=1;
+        fi;
+        if (U[iU]=EDGE[2]) then
+          test2:=1;
+        fi;
+      od;
+      if (test1 <> test2) then
+	ZERMAT[iEdge][iSet+NBE]:=1;
+	ZERMAT[iSet+NBE][iEdge]:=1;
+      fi;
+    od;
+  od;
+  for iSet in [1..NBC]
+  do
+    ZERMAT[iSet+NBE][NBN-1]:=1;
+    ZERMAT[NBN-1][iSet+NBE]:=1;
+  od;
+  ZERMAT[NBN][NBN-1]:=1;
+  ZERMAT[NBN-1][NBN]:=1;
+
+  # creating invariant for number crunching
+  INVARIANT:=[];
+  for iCut in [1..NBC]
+  do
+    Add(INVARIANT, Length(LISTSET[iCut]));
+    Add(INVARIANT, NBV-Length(LISTSET[iCut]));
+  od;
+  Sort(INVARIANT);
+  AppendTo(outputInvariant, NBV);
+  for iInv in [1..Length(INVARIANT)]
+  do
+    AppendTo(outputInvariant, " ", INVARIANT[iInv]);
+  od;
+  AppendTo(outputInvariant, "\n");
+
+  #saving the coordinates of the Delaunay polytope
+  output:=OutputTextFile(Concatenation("WORK-orbit/CutVertices", String(iElt)), true);
+  AppendTo(output, "[");
+  for iVert in [1..Length(TheVert)]
+  do
+    if iVert>1 then
+      AppendTo(output, ",");
+    fi;
+    eVert:=TheVert[iVert];
+    AppendTo(output, "[");
+    for iCol in [1..Length(eVert)]
+    do
+      if iCol>1 then
+        AppendTo(output, ",");
+      fi;
+      AppendTo(output, eVert[iCol]);
+    od;
+    AppendTo(output, "]");
+  od;
+  AppendTo(output, "]");
+  CloseStream(output);
+
+  # creating the graph file in nauty form without header and footer
+  output:=OutputTextFile(Concatenation("WORK-orbit/CutGraph",String(iElt)), true);
+  for iNode in [1..NBN]
+  do
+    AppendTo(output," ",iNode," :");
+    for jNode in [1..NBN]
+    do
+      if ZERMAT[iNode][jNode]=1 then
+	AppendTo(output, " ", jNode);
+      fi;
+    od;
+    AppendTo(output,";\n");
+  od;
+  CloseStream(output);
+  Print("Building Graph for element ",iElt," with ", NBV," Vertices\n");
+od;
+CloseStream(outputInvariant);

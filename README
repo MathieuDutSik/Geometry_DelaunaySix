@@ -1,0 +1,87 @@
+    Delaunay Six
+
+This program computes the list of all 6241 combinatorial types of
+Delaunay polytopes in dimension six. See below the data
+
+dimension     Author          Nr of types
+2             Fedorov         2
+3             Fedorov         5
+4             Erdhal-Ryshkov  19
+5             Kononenko       138
+6             Dutour          6241
+
+
+The last version of this program is available from
+http://drobilica.irb.hr/~mathieu/
+
+This program use:
+
+the "dreadnaut" program from the nauty package 
+http://cs.anu.edu.au/~bdm/nauty/
+
+the "gap" computer algebra program
+http://www.gap-system.org/
+
+Both gap.sh and dreadnaut should be available from the command line.
+Also perl should be in /usr/bin/perl
+
+This program computes the list of all 6241 combinatorial types of
+Delaunay polytopes in dimension six.
+
+AUTHOR  : Mathieu Dutour
+e-mail  : Mathieu.Dutour@gmail.com
+homePage: http://drobilica.irb.hr/~mathieu/
+
+   HOW TO RUN THE ENUMERATION (on linux)
+
+Extract the archive
+tar -vxzf DelaunaySix.tar.gz
+
+Go into the archive
+cd DelaunaySix
+
+run the program by
+./RUN_ENUMERATION
+
+   HOW TO GET THE DATAS
+
+In the directory RESULT should appear after 2 or more days of
+computations (depending of the processing power of your
+computer) the files CorankXWithSchlafli and CorankXWithoutSchlafli
+with X varying between 1 and 20.
+the simplex correspond to X=0 and is not included.
+
+The file RESULT/Maximal present the few maximal Delaunay polytopes
+found.
+
+   TODO
+
+The whole enumeration take as granted that we know the list of
+3773 facets and 37170 extreme rays of the hypermetric cone HYP7. 
+
+Those lists were actually computed by Baranovskii and M.Dutour.
+At present they are in the directory WORK-PERM but they should
+be generated at the beginning of the computation.
+
+      REFERENCES
+
+E.P. Baranovskii, "About L-simplexes of $6$-dimensional lattices", 
+Second International conference ``Algebraic, Probabilistic, Geometrical,
+Combinatorial and Functional Methods in the theory of numbers'' (1995)
+(in Russian).
+
+E.P. Baranovskii, {\em The conditions for a simplex of $6$-dimensional
+lattice to be $L$-simplex}, (in Russian) Nauchnyie Trudi Ivanovo state
+university. Mathematica, {\bf 2} (1999) 18--24.
+
+Mathieu Dutour, Michel Deza, "The hypermetric cone on seven vertices"
+http://www.arxiv.org/abs/math.MG/0108177
+
+Mathieu Dutour, "The six-dimensional Delaunay polytopes"
+http://www.arxiv.org/abs/math.MG/0212353
+
+Talk given at "Combinatoric Seminar in Givat Ram campus",
+              "ISM symposium in Tokyo",
+              "50th Seminaire Lotharingien de Combinatoire",
+              "Computer Science Seminar of Holon Academic 
+               Institute of Technology"

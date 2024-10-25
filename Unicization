@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+
+open(INFILE, "OUTPUT/FacesData");
+@FaceData=<INFILE>;
+close(INFILE);
+
+open(INFILE, "OUTPUT/FacesFrom");
+@FaceFrom=<INFILE>;
+close(INFILE);
+
+#
+
+for ($iC=1; $iC<=scalar(@FaceData); $iC++)
+{
+    $IRRED[$iC-1]=1;
+    $_=$FaceFrom[$iC-1];
+    s/\n//;
+    $FRML[$iC-1]=$_;
+}
+
+for ($i=1; $i<=scalar(@FaceData)-1; $i++)
+{
+    if ($IRRED[$i-1] eq 1)
+    {
+        for ($j=$i+1; $j<=scalar(@FaceData); $j++)
+        {
+            if ($IRRED[$j-1] eq 1)
+            {
+                if ($FaceData[$i-1] eq $FaceData[$j-1])
+                {
+                    $IRRED[$j-1]=0;
+                    $FRML[$i-1]=$FRML[$i-1].$FRML[$j-1];
+                }
+            }
+        }
+    }
+}
+
+#
+
+open(OUTDATA, "> OUTPUT/FacesUniqData");
+open(OUTFROM, "> OUTPUT/FacesUniqFrom");
+for ($iC=1; $iC<=scalar(@FaceData); $iC++)
+{
+    if ($IRRED[$iC-1] eq 1)
+    {
+	print OUTDATA $FaceData[$iC-1];
+	print OUTFROM $FRML[$iC-1]."\n";
+    }
+}
+close(OUTDATA);
+close(OUTFROM);

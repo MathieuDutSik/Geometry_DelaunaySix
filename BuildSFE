@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+# This script build the list of extreme rays correponding
+# to a list of subgraphs
+
+$uu=scalar(@ARGV);
+
+if ($uu ne 3)
+{
+    print "This Script is used as\n";
+    print "BuildSFE [ElementsPolytope] [ListAffBasis] [HypermetricFile]\n";
+    print "with [ElementsPolytope] a list of vertex of the polytope\n";
+    print "with [ListAffBasis] a list of AffineBasis of the polytope\n";
+    print "with [HypermetricFile] a list of incident hypermetrics\n";
+    die;
+}
+$PolytopeFile=$ARGV[0];
+$ListAffBasis=$ARGV[1];
+$HypermetFile=$ARGV[2];
+
+open(INFILE, $PolytopeFile) or die "imposible to open ".$PolytopeFile;
+@ListVertex=<INFILE>;
+close(INFILE);
+$PolytopeSize=scalar(@ListVertex);
+@vertex=split(" ", $ListVertex[0]);
+$dimPolytope=scalar(@vertex)-1;
+#print "Polytope has size ". $PolytopeSize."\n";
+
+open(INFILE, $ListAffBasis) or die "imposible to open ".$ListAffBasis;
+@AFFBASIS=<INFILE>;
+close(INFILE);
+
+open(INFILE, $HypermetFile) or die "imposible to open ".$HypermetFile;
+@HYP=<INFILE>;
+close(INFILE);
+
+
+for ($iAff=1; $iAff<=scalar(@AFFBASIS); $iAff++)
+{
+    $_=$AFFBASIS[$iAff-1];
+    s/\n//;
+    @UJ=split(" ", $_);
+    $nVertex=scalar(@UJ);
+    $mesg=$_;
+    for ($iHyp=1; $iHyp<=scalar(@HYP); $iHyp++)
+    {
+	for ($iC=0; $iC<=$dimPolytope; $iC++)
+	{
+	    $CC[$iC]=0;
+	}
+	@HYPVECT=split(" ", $HYP[$iHyp-1]);
+	for ($iHypVect=1; $iHypVect<=scalar(@HYPVECT); $iHypVect++)
+	{
+	    @COORD=split(" ", $ListVertex[$UJ[$iHypVect-1]-1]);
+	    for ($iC=0; $iC<=$dimPolytope; $iC++)
+	    {
+		$CC[$iC]=$CC[$iC]+$COORD[$iC]*$HYPVECT[$iHypVect-1];
+	    }
+	}
+	$TT="";
+	for ($iC=0; $iC<=$dimPolytope; $iC++)
+	{
+	    $TT=$TT." ".$CC[$iC];
+	}
+	$TT=$TT."\n";
+	$idx=1;
+#	print $TT."\n";
+	while (1)
+	{
+	    if ($TT eq $ListVertex[$idx-1])
+	    {
+		last;
+	    }
+	    $idx++;
+	}
+	$mesg=$mesg." ".$idx;
+    }
+    $mesg=$mesg."\n";
+    print $mesg;
+}

@@ -1,0 +1,51 @@
+TotalList:=[];
+for iCorank in [1..20]
+do
+  eFile:=Concatenation("ListCorank", String(iCorank));
+  Print("iCorank=", iCorank, "\n");
+  ListEXT:=ReadAsFunction(eFile)();
+  for EXT in ListEXT
+  do
+    if IsCentrallySymmetric(EXT) then
+      Add(TotalList, EXT);
+    fi;
+  od;
+od;
+Print("|TotalList|=", Length(TotalList), "\n");
+FuncFind:=function(EXTt)
+  local fEXT, test;
+  for fEXT in TotalList
+  do
+    test:=LinPolytope_Isomorphism(fEXT, EXTt);
+    if test<>false then
+      return rec(fEXT:=fEXT, eReply:=true);
+    fi;
+  od;
+  return rec(eReply:=false);
+end;
+
+
+ListCounterExample:=[];
+for iCorank in [1..20]
+do
+  eFile:=Concatenation("ListCorank", String(iCorank));
+  ListEXT:=ReadAsFunction(eFile)();
+  Print("iCorank=", iCorank, "\n");
+  for EXT in ListEXT
+  do
+    if IsCentrallySymmetric(EXT) then
+      ListSet:=DualDescriptionSets(EXT);
+      EXTn:=[];
+      for eSet in ListSet
+      do
+        eVert:=Isobarycenter(EXT{eSet});
+        Add(EXTn, eVert);
+      od;
+      test:=FuncFind(EXTn);
+      if test.eReply=false then
+        Add(ListCounterExample, rec(EXT:=EXT, EXTn:=EXTn));
+      fi;
+    fi;
+  od;
+od;
+

@@ -1,0 +1,176 @@
+#!/usr/bin/perl
+
+open(INFILE, "WORK/CutFacesInvariants");
+@INVARIANT=<INFILE>;
+close(INFILE);
+
+open(INFILE, "OUTPUT/CutFroms");
+@FRM=<INFILE>;
+close(INFILE);
+
+open(INFILE, "OUTPUT/WithoutSchlafli");
+@CLASSES=<INFILE>;
+close(INFILE);
+$nbcases=scalar(@CLASSES);
+
+for ($iClas=1; $iClas<=$nbcases; $iClas++)
+{
+    $IRRED[$iClas]=1;
+    $Chain[$iClas]=" ".$iClas;
+    $_=$FRM[$iClas-1];
+    s/\n//;
+    $FRML[$iClas]=$_;
+}
+
+# data stored then we crank out everything
+sub TestIsoGraphs($$)
+{
+    my ($Name1, $Name2) = @_;
+
+    $File="WORK-orbit/CutGraph".$Name1;
+    open(INFILE, $File) or die "impossible to open ".$File;
+    @GR1=<INFILE>;
+    close(INFILE);
+
+    $File="WORK-orbit/CutGraph".$Name2;
+    open(INFILE, $File) or die "impossible to open ".$File;
+    @GR2=<INFILE>;
+    close(INFILE);
+
+    if ($INVARIANT[$Name1-1] eq $INVARIANT[$Name2-1])
+    {
+	$nb=scalar(@GR1)+1;
+	open(OUT, "> WORK/Zest");
+	print OUT "c -a -m\n";
+	print OUT "n=".$nb."\n";
+	print OUT "g\n";
+	for ($iGR=1; $iGR<=scalar(@GR1); $iGR++)
+	{
+	    print OUT $GR1[$iGR-1];
+	}
+	print OUT "x @\n";
+	print OUT "g\n";
+	for ($iGR=1; $iGR<=scalar(@GR2); $iGR++)
+	{
+	    print OUT $GR2[$iGR-1];
+	}
+
+	for ($iGR=1; $iGR<=$GraphSize; $iGR++)
+	{
+	    print OUT $GRAPH[$iGR+1];
+	}
+	print OUT "x\n";
+	print OUT "##";
+
+	$order="dreadnaut <WORK/Zest > OUTPUT/Internal.Results";
+#        print $order."\n";
+	system $order;
+    
+	open(INF, "OUTPUT/Internal.Results") or die "impossible to open the file";
+	@Bnauty=<INF>;
+	close(INF);
+	
+	$order="rm -f WORK/Zest OUTPUT/Internal.Results";
+#        print $order."\n";
+	system $order;
+	
+	$line=$Bnauty[scalar(@INF)-1];
+	if ($line eq "h and h' are different.\n")
+	{
+	    return "NO";
+	}
+	else
+	{
+	    return "YES";
+	}
+    }
+    else
+    {
+	return "NO";
+    }
+}
+
+
+
+#
+#
+# reducing the classes of isomorphy;
+for ($i=1; $i<=$nbcases; $i++)
+{
+    if ($IRRED[$i] eq 1)
+    {
+	print "Considering Class ".$i."\n";
+	for ($j=$i+1; $j<=$nbcases; $j++)
+	{
+	    if ($IRRED[$j] eq 1)
+	    {
+		$Chain=TestIsoGraphs($i,$j);
+#		print $Chain." for i=".$i." and j=".$j."\n";
+		if ($Chain eq "YES")
+		{
+		    $IRRED[$j]=0;
+		    $Chain[$i]=$Chain[$i]." ".$j;
+		    $FRML[$i]=$FRML[$i].$FRML[$j];
+		}
+	    }
+	}
+    }
+}
+
+$nbClas=0;
+for ($i=1; $i<=$nbcases; $i++)
+{
+    if ($IRRED eq 1)
+    {
+	$nbClas++;
+    }
+}
+
+
+
+open(OUTVERT, "> OUTPUT/ListVertices");
+print OUTVERT "LISTVERT:=[";
+
+
+
+open(OUT, "> WORK/ListClasses");
+for ($iClas=1; $iClas<=$nbcases; $iClas++)
+{
+    if ($IRRED[$iClas] eq 1)
+    {
+	print OUT $Chain[$iClas];
+	print OUT "\n";
+	open(INFILE, "WORK-orbit/CutVertices".$iClas) or die "impossible to open WORK-orbit/CutVertices".$iClas;
+	@B=<INFILE>;
+	close(INFILE);
+	if ($iClas>1)
+	{
+	    print OUTVERT ",";
+	}
+	print OUTVERT $B[0];
+    }
+}
+close(OUT);
+print "Output in file of classes occurence WORK/ListClasses\n";
+
+print OUTVERT "];\n";
+close(OUTVERT);
+
+
+
+
+
+open(OUT, "> OUTPUT/UnicizedCutFaces");
+open(OUTFROM, "> OUTPUT/CutFinalFrom");
+for ($iClas=1; $iClas<=$nbcases; $iClas++)
+{
+    if ($IRRED[$iClas] eq 1)
+    {
+	print OUT $CLASSES[$iClas-1];
+	print OUTFROM $FRML[$iClas];
+	print OUTFROM "\n";
+    }
+}
+close(OUTFROM);
+close(OUT);
+print "Output in file of classes occurence OUTPUT/UnicizedCutFaces\n";

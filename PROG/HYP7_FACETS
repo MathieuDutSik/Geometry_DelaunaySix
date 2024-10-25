@@ -1,0 +1,32 @@
+Read("WORK-PERM/Gap-DESC-Symbol");
+
+output:=OutputTextFile("OUTPUT/Gap-DESC", true);;
+AppendTo(output, "DESC:=[");
+
+for iElt in [1..Length(DESCSYMB)]
+do
+  eElt:=DESCSYMB[iElt];
+  HypDim:=Length(eElt);
+  VEC:=[];
+  for i in [1..HypDim-1]
+  do
+    for j in [i+1..HypDim]
+    do
+      Add(VEC, -eElt[i]*eElt[j]);
+    od;
+  od;
+  if iElt>1 then
+    AppendTo(output, ",");
+  fi;
+  AppendTo(output, "[");
+  for iCol in [1..Length(VEC)]
+  do
+    if iCol>1 then
+      AppendTo(output, ",");
+    fi;
+    AppendTo(output, VEC[iCol]);
+  od;
+  AppendTo(output, "]");
+od;
+AppendTo(output, "];\n");
+CloseStream(output);

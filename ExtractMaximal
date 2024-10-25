@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+
+$uu=scalar(@ARGV);
+
+if ($uu ne 1)
+{
+    print "ExtractMaximal is used as\n";
+    print "ExtractMaximal [iStep]\n";
+    die;
+}
+
+$iStep=$ARGV[0];
+
+open(INFILE, "WORK-CORANKS/CutFroms".$iStep);
+@LISTCUT=<INFILE>;
+close(INFILE);
+
+open(INFILE, "WORK-CORANKS/SchFroms".$iStep);
+@LISTSCH=<INFILE>;
+close(INFILE);
+
+open(INFILE, "WORK/Elements");
+@ListElement=<INFILE>;
+close(INFILE);
+
+$nbE=scalar(@ListElement);
+
+for ($i=1; $i<=$nbE; $i++)
+{
+    $STATUS[$i-1]=0;
+}
+
+for ($iCut=1; $iCut<=scalar(@LISTCUT); $iCut++)
+{
+    $_=$LISTCUT[$iCut-1];
+    s/\n//;
+    @L=split(" ", $_);
+    for ($iL=1; $iL<=scalar(@L); $iL++)
+    {
+	$STATUS[$L[$iL-1]-1]=1;
+    }
+}
+
+for ($iSch=1; $iSch<=scalar(@LISTSCH); $iSch++)
+{
+    $_=$LISTSCH[$iSch-1];
+    s/\n//;
+    @L=split(" ", $_);
+    for ($iL=1; $iL<=scalar(@L); $iL++)
+    {
+	$STATUS[$L[$iL-1]-1]=1;
+    }
+}
+
+$iStepM1=$iStep-1;
+open(OUT, "> WORK-CORANKS/Maximal".$iStepM1);
+for ($i=1; $i<=$nbE; $i++)
+{
+    if ($STATUS[$i-1] eq 0)
+    {
+	print OUT " ".$i."\n";
+    }
+}
+close(OUT);
+
+

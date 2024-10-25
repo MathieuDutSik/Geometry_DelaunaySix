@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+
+# This script take a list of extreme rays of facets and returns the number
+# of coordinate that are equal to zero
+
+$uu=scalar(@ARGV);
+
+if ($uu ne 1)
+{
+    print "ConvertToGap is used as\n";
+    print "ConvertToGap [File]\n\n";
+    die;
+}
+
+
+$InputFile=$ARGV[0];
+open(INFILE, $InputFile) or die "EXT.in ouverture impossible";
+@preIFI=<INFILE>;
+close(INFILE);
+
+@IFI=();
+for ($iLine=1; $iLine<=scalar(@preIFI); $iLine++)
+{
+    $eLine=$preIFI[$iLine-1];
+    if ($eLine ne "\n")
+    {
+	$IFI[scalar(@IFI)]=$eLine;
+#	print "eLine=".$eLine;
+    }
+}
+
+$iLine=-1;
+$nbLine=scalar(@IFI);
+print "return [\n";
+$IsFirst=1;
+while(1)
+{
+    if ($iLine == $nbLine -1)
+    {
+	last;
+    }
+    if ($IsFirst eq 0)
+    {
+	print ",\n";
+    }
+    $IsFirst=0;
+    $iLine++;
+    $eLine=$IFI[$iLine];
+#    print "eLine=".$eLine;
+    @U=split(" ", $eLine);
+    for ($iU=1; $iU<=scalar(@U); $iU++)
+    {
+	if ($U[$iU-1] eq "vertices")
+	{
+	    $iUVert=$iU;
+	}
+    }
+    $nbVert=$U[$iUVert-2];
+    print "[";
+    for ($iVert=1; $iVert<=$nbVert; $iVert++)
+    {
+	$iLine++;
+	$eLine=$IFI[$iLine];
+	@W=split(" ", $eLine);
+	print "[";
+	for ($i=1; $i<=7; $i++)
+	{
+	    printf $W[$i-1];
+	    if ($i<7)
+	    {
+		print ",";
+	    }
+	}
+	print "]";
+	if ($iVert < $nbVert)
+	{
+	    print ",\n";
+	}
+    }
+    print "]";
+}
+print "];\n";

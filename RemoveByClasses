@@ -1,0 +1,190 @@
+#!/usr/bin/perl
+
+$GraphFile="WORK-PERM/GraphVertices.nauty";
+$SubGraphFile=$ARGV[1];
+$InvariantFile=$ARGV[2];
+
+open(INFILE, "OUTPUT/WithSchlafli");
+@WSCH=<INFILE>;
+close(INFILE);
+$nbcases=scalar(@WSCH);
+
+open(INFILE, $GraphFile) or die "impossible to open ".$GraphFile;
+@GRAPH=<INFILE>;
+close(INFILE);
+
+open(INFILE, "OUTPUT/SchFroms");
+@FRM=<INFILE>;
+close(INFILE);
+
+@l=split("=", $GRAPH[0]);
+$GraphSize=$l[1]-1;
+$nb=$GraphSize+1;
+
+for ($iClas=1; $iClas<=$nbcases; $iClas++)
+{
+    $IRRED[$iClas]=1;
+    $Chain[$iClas]=" ".$iClas;
+    $_=$FRM[$iClas-1];
+    s/\n//;
+    $FRML[$iClas]=$_;
+}
+
+# data stored then we crank out everything
+sub TestIsoSubGraphs($$)
+{
+    my ($Name1, $Name2) = @_;
+    
+    open(OUT, "> WORK/Zest");
+    print OUT "c -a -m\n";
+    print OUT "n=".$nb."\n";
+    print OUT "g\n";
+    print OUT "0 :".$Name1.";\n";
+    for ($iGR=1; $iGR<=$GraphSize; $iGR++)
+    {
+	print OUT $GRAPH[$iGR+1];
+    }
+    print OUT "x @\n";
+    print OUT "g\n";
+    print OUT "0 :".$Name2.";\n";
+    for ($iGR=1; $iGR<=$GraphSize; $iGR++)
+    {
+	print OUT $GRAPH[$iGR+1];
+    }
+    print OUT "x\n";
+    print OUT "##";
+    
+    #
+    #
+    # then launch nauty on the file to crank it.
+    $order="dreadnaut <WORK/Zest > OUTPUT/Internal.Results";
+#    print $order."\n";
+    system $order;
+
+    open(INF, "OUTPUT/Internal.Results") or die "impossible to open the file";
+    @Bnauty=<INF>;
+    close(INF);
+    
+    $order="rm -f WORK/Zest OUTPUT/Internal.Results";
+#    print $order."\n";
+    system $order;
+
+    $line=$Bnauty[scalar(@INF)-1];
+    if ($line eq "h and h' are different.\n")
+    {
+	return "NO";
+    }
+    else
+    {
+	return "YES";
+    }
+}
+
+sub TestIsoClasses($$)
+{
+    my ($Class1, $Class2) = @_;
+    $File="WORK-orbit/Invariants".$Class1;
+    open(INFILE, $File) or die "impossible to open ".$File;
+    @INV1=<INFILE>;
+    close(INFILE);
+
+    $File="WORK-orbit/Invariants".$Class2;
+    open(INFILE, $File) or die "impossible to open ".$File;
+    @INV2=<INFILE>;
+    close(INFILE);
+
+    $File="WORK-orbit/SubGraphs-noniso".$Class1;
+    open(INFILE, $File) or die "impossible to open ".$File;
+    @SG1=<INFILE>;
+    close(INFILE);
+
+    $File="WORK-orbit/SubGraphs-noniso".$Class2;
+    open(INFILE, $File) or die "impossible to open ".$File;
+    @SG2=<INFILE>;
+    close(INFILE);
+
+    $test="NO";
+    $twopos=1;
+    while(1)
+    {
+	if ($twopos > scalar(@SG2))
+	{
+	    last;
+	}
+	if ($INV1[0] eq $INV2[$twopos-1])
+	{
+	    $_=$SG1[0];
+	    s/\n//;
+	    $Name1=$_;
+	    $_=$SG2[$twopos-1];
+	    s/\n//;
+	    $Name2=$_;
+
+	    $test=TestIsoSubGraphs($Name1, $Name2);
+	    if ($test eq "YES")
+	    {
+		last;
+	    }
+	}
+	$twopos++;
+    }
+    if ($test eq "YES")
+    {
+	print "Classes ".$Class1." and ".$Class2." are isomorph\n";
+    }
+    else
+    {
+#	print "Classes ".$Class1." and ".$Class2." are NON isomorph\n";
+    }
+
+
+    return $test;
+}
+
+
+
+
+#
+#
+# reducing the classes of isomorphy;
+for ($i=1; $i<=$nbcases; $i++)
+{
+    if ($IRRED[$i] eq 1)
+    {
+	print "Considering Class ".$i."\n";
+	for ($j=$i+1; $j<=$nbcases; $j++)
+	{
+	    if ($IRRED[$j] eq 1)
+	    {
+		$Chain=TestIsoClasses($i,$j);
+		if ($Chain eq "YES")
+		{
+		    $IRRED[$j]=0;
+		    $Chain[$i]=$Chain[$i]." ".$j;
+		    $FRML[$i]=$FRML[$i].$FRML[$j];
+		}
+	    }
+	}
+    }
+}
+
+
+open(OUT, "> WORK/ListClasses");
+open(OUTFROM, "> WORK/SchFinalFrom");
+for ($iClas=1; $iClas<=$nbcases; $iClas++)
+{
+    if ($IRRED[$iClas] eq 1)
+    {
+	print OUT $Chain[$iClas];
+	print OUT "\n";
+	print OUTFROM $FRML[$iClas];
+	print OUTFROM "\n";
+    }
+}
+close(OUTFROM);
+close(OUT);
+print "Output in file WORK/ListClasses\n";
+
+
+
+

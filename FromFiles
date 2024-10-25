@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+
+$uu=scalar(@ARGV);
+
+
+if ($uu ne 3)
+{
+    print "FromFiles is used as\n";
+    print "FromFiles [File1] [Files2] [Files3]\n\n";
+    print "with [File1] the set for which we are searching origins\n";
+    print "with [File2] the total list of sets\n";
+    print "with [File3] the total list of origins\n";
+    print "output is the list of origins\n";
+    die;
+}
+
+
+open(INFILE, $ARGV[0]);
+@FILESEARCH=<INFILE>;
+close(INFILE);
+
+open(INFILE, $ARGV[1]);
+@TOTALLIST=<INFILE>;
+close(INFILE);
+
+open(INFILE, $ARGV[2]);
+@TOTALORIGIN=<INFILE>;
+close(INFILE);
+
+
+for ($iFF=1; $iFF<=scalar(@FILESEARCH); $iFF++)
+{
+    $entry=$FILESEARCH[$iFF-1];
+    for ($iP=1; $iP<=scalar(@TOTALLIST); $iP++)
+    {
+	if ($TOTALLIST[$iP-1] eq $entry)
+	{
+	    print $TOTALORIGIN[$iP-1];
+	}
+    }
+}

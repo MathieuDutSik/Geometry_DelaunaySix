@@ -1,0 +1,157 @@
+#!/usr/bin/perl
+
+# computation of combinatorial types of Delaunay polytopes
+# It assumes the work is done at Corank1
+
+$order="/bin/rm WORK-CORANKS/* RESULT/* WORK-PERM/Gap-DESC-Symbol";
+print $order."\n";
+system $order;
+
+#$order="cp WORK-PERM/SchCorank1 WORK-CORANKS/.";
+#print $order."\n";
+#system $order;
+
+#$order="cp WORK-PERM/CutCorank1 WORK-CORANKS/.";
+#print $order."\n";
+#system $order;
+
+$order="./PerlToGap WORK-PERM/HYP7-symbol DESCSYMB > WORK-PERM/Gap-DESC-Symbol";
+print $order."\n";
+system $order;
+
+$order="gap.sh < PROG/HYP7_FACETS";
+print $order."\n";
+system $order;
+
+$order="mv OUTPUT/Gap-DESC WORK-PERM/Gap-DESC";
+print $order."\n";
+system $order;
+
+for ($iStep=1; $iStep<=20; $iStep++)
+{
+    $order="/bin/rm -rf WORK/* OUTPUT/* WORK-orbit && mkdir WORK-orbit";
+    print $order."\n";
+    system $order;
+    
+    if ($iStep eq 1)
+    {
+	open(OUT, "> OUTPUT/FacesData");
+	print OUT " 1\n";
+	print OUT " 148\n";
+	print OUT " 1198\n";
+	print OUT " 2248\n";
+	print OUT " 2458\n";
+	print OUT " 3088\n";
+	print OUT " 3123\n";
+	print OUT " 3543\n";
+	print OUT " 106\n";
+	close(OUT);
+
+	open(OUT, "> OUTPUT/FacesFrom");
+	for ($i=1; $i<=9; $i++)
+	{
+	    print OUT " 1";
+	}
+	close(OUT);
+    }
+    else
+    {
+	$iStepmin1=$iStep-1;
+	$order="cat WORK-CORANKS/CutCorank".$iStepmin1." WORK-CORANKS/SchCorank".$iStepmin1." > WORK/Elements";
+	print $order."\n";
+	system $order;
+	
+	$order="./PerlToGap WORK/Elements ELT > WORK/SPANNING-ELT";
+	print $order."\n";
+	system $order;
+
+	# creation of new faces and of the corresponding from files
+	$order="gap.sh < PROG/GEN-FACES";
+	print $order."\n";
+	system $order;
+    }
+
+    $order="./Unicization";
+    print $order."\n";
+    system $order;
+
+    $order="./PerlToGap OUTPUT/FacesUniqData ELT > WORK/ELT-CRACK";
+    print $order."\n";
+    system $order;
+
+    $order="gap.sh <PROG/DEGENERACY+SCH_CUT";
+    print $order."\n";
+    system $order;
+
+    $order="./FromFiles OUTPUT/WithSchlafli OUTPUT/FacesUniqData OUTPUT/FacesUniqFrom > OUTPUT/SchFroms";
+    print $order."\n";
+    system $order;
+
+    $order="./FromFiles OUTPUT/WithoutSchlafli OUTPUT/FacesUniqData OUTPUT/FacesUniqFrom > OUTPUT/CutFroms";
+    print $order."\n";
+    system $order;
+
+    $order="./STEP-Schlaflis";
+    print $order."\n";
+    system $order;
+    
+    $order="mv WORK/Classes WORK-CORANKS/SchCorank".$iStep;
+    print $order."\n";
+    system $order;
+    
+    $order="mv WORK/SchFinalFrom WORK-CORANKS/SchFroms".$iStep;
+    print $order."\n";
+    system $order;
+
+    $order="./PerlToGap OUTPUT/WithoutSchlafli ELT > WORK/ELT-CRACK";
+    print $order."\n";
+    system $order;
+
+    $order="gap.sh -o 768M <PROG/COMBINATORIAL-OBJECT-OUTPUT";
+    print $order."\n";
+    system $order;
+
+    $order="./RemoveByGraph";
+    print $order."\n";
+    system $order;
+
+    $order="mv OUTPUT/UnicizedCutFaces WORK-CORANKS/CutCorank".$iStep;
+    print $order."\n";
+    system $order;
+
+    $order="mv OUTPUT/CutFinalFrom WORK-CORANKS/CutFroms".$iStep;
+    print $order."\n";
+    system $order;
+
+    $order="./ExtractMaximal ".$iStep;
+    print $order."\n";
+    system $order;
+    
+    # search centrally symmetric ones (they can only happen in the cut ones)
+
+    $order="./PerlToGap WORK-CORANKS/CutCorank".$iStep." ELT > WORK/ELT-CRACK";
+    print $order."\n";
+    system $order;
+    
+    $order="gap.sh <PROG/CENTRAL-SYMMETRY";
+    print $order."\n";
+    system $order;
+    
+    $order="mv OUTPUT/DataCutFormat RESULT/Corank".$iStep."WithoutSchlafli";
+    print $order."\n";
+    system $order;
+
+    # present the data correctly
+
+    $order="./PerlToGap WORK-CORANKS/SchCorank".$iStep." ELT > WORK/ELT-CRACK";
+    print $order."\n";
+    system $order;
+    
+    $order="gap.sh <PROG/SCH_PRESENTATION";
+    print $order."\n";
+    system $order;
+    
+    $order="mv OUTPUT/DataPresentable RESULT/Corank".$iStep."WithSchlafli";
+    print $order."\n";
+    system $order;
+}

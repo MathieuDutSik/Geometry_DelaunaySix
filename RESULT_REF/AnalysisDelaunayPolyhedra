@@ -1,0 +1,47 @@
+for iCorank in [1..20]
+do
+  eFile:=Concatenation("ListCorank", String(iCorank));
+  ListEXT:=ReadAsFunction(eFile)();
+  for EXT in ListEXT
+  do
+    ListEvalMap:=List(EXT, x->SymmetricMatrixToVector(TransposedMat([x])*[x]));
+    LSetA:=DualDescriptionSets(ListEvalMap);
+    ListSets1:=[];
+    for eSet in LSetA
+    do
+      if RankMat(EXT{eSet})=RankMat(EXT) then
+        Add(ListSets1, eSet);
+      fi;
+    od;
+    ListSets2:=[];
+    for eSet in ListSets1
+    do
+      ListEvSel:=ListEvalMap{eSet};
+      LSet:=DualDescriptionSets(ListEvSel);
+      for fSet in LSet
+      do
+        hSet:=eSet{fSet};
+        if RankMat(EXT{hSet})=RankMat(EXT) then
+          Add(ListSets2, hSet);
+        fi;
+      od;
+    od;
+    GRA:=NullGraph(Group(()), Length(ListSets1));
+    for eSet2 in ListSets2
+    do
+      ListInc:=Filtered([1..Length(ListSets1)], x->IsSubset(ListSets1[x],eSet2));
+      if Length(ListInc)<>2 then
+        Print("Maybe we have a problem\n");
+      fi;
+      if Length(ListInc)=2 then
+        AddEdgeOrbit(GRA, ListInc);
+        AddEdgeOrbit(GRA, Reversed(ListInc));
+      fi;
+    od;
+    if IsConnectedGraph(GRA)=false then
+      Print("No connectivity, catastroph!\n");
+      Print(NullMat(5));
+    fi;
+  od;
+od;
+

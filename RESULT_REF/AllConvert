@@ -1,0 +1,30 @@
+eProg:="./ConvertToGap";
+for i in [1..20]
+do
+  Print("i=", i, "\n");
+  ePrefix1:=Concatenation("Corank", String(i), "WithSchlafli");
+  eFileTxt1:=Concatenation(ePrefix1, ".txt");
+  eFileGap1:=Concatenation(ePrefix1, ".gap");
+  TheCommand:=Concatenation(eProg, " ", eFileTxt1, " > ", eFileGap1);
+  Exec(TheCommand);
+  #
+  ePrefix2:=Concatenation("Corank", String(i), "WithoutSchlafli");
+  eFileTxt2:=Concatenation(ePrefix2, ".txt");
+  eFileGap2:=Concatenation(ePrefix2, ".gap");
+  TheCommand:=Concatenation(eProg, " ", eFileTxt2, " > ", eFileGap2);
+  Exec(TheCommand);
+  #
+  eList1:=ReadAsFunction(eFileGap1)();
+  eList2:=ReadAsFunction(eFileGap2)();
+  eListTot:=Concatenation(eList1, eList2);
+  ListEXT:=[];
+  for eEnt in eListTot
+  do
+    AffBas:=CreateAffineBasis(eEnt);
+    EXT1:=eEnt*Inverse(AffBas);
+    EXT2:=List(EXT1, x->Concatenation([1], x{[2..7]}));
+    Add(ListEXT, EXT2);
+  od;
+  eFileSave:=Concatenation("ListCorank", String(i));
+  SaveDataToFile(eFileSave, ListEXT);
+od;

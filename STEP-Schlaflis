@@ -1,0 +1,76 @@
+#!/usr/bin/perl
+
+open(INFILE, "OUTPUT/WithSchlafli") or die "impossible to find file OUTPUT/WithSchlafli";
+@SCH=<INFILE>;
+close(INFILE);
+
+open(INFILE, "WORK-PERM/HYP7-symbol") or die "impossible to find file WORK-PERM/HYP7-symbol";
+@DESCSYM=<INFILE>;
+close(INFILE);
+
+open(INFILE, "WORK-PERM/SchlafliExtsymbols") or die "impossible to find file WORK-PERM/SchlafliExtsymbols";
+@SCHLAFLISYM=<INFILE>;
+close(INFILE);
+
+for ($iSch=1; $iSch<=scalar(@SCH); $iSch++)
+{
+    @ListFacets=split(" ", $SCH[$iSch-1]);
+    open(OUT, "> WORK/Hypermetrics");
+    for ($iLih=1; $iLih<=scalar(@ListFacets); $iLih++)
+    {
+	print OUT $DESCSYM[$ListFacets[$iLih-1]-1];
+    }
+    close(OUT);
+    
+    open(INFILE, "WORK-orbit/IncidentSchlafli".$iSch);
+    @U=<INFILE>;
+    close(INFILE);
+    
+    open(OUT, "> WORK/IncidentSchlafliSymbols");
+    for ($iU=1; $iU<=scalar(@U); $iU++)
+    {
+	@l=split(" ", $U[$iU-1]);
+	print OUT $SCHLAFLISYM[$l[0]-1];
+    }
+    close(OUT);
+
+    $order="./BuildSFE WORK-PERM/Schlafli WORK/IncidentSchlafliSymbols WORK/Hypermetrics > WORK/SubGraphs";
+#    print $order."\n";
+    system $order;
+
+    $order="cat WORK/SubGraphs | ./PerlSortByValues | sort | uniq > WORK/SubGraphs-unicized";
+#    print $order."\n";
+    system $order;
+
+    $order="./ReduceProblemSize WORK-PERM/GraphVertices.nauty WORK/SubGraphs-unicized WORK-PERM/Matrix27x27";
+#    print $order."\n";
+    system $order;
+
+    $order="mv WORK/CrankedSubGraphs WORK-orbit/SubGraphs-noniso".$iSch;
+#    print $order."\n";
+    system $order;
+
+    $order="mv WORK/CrankedInvariants WORK-orbit/Invariants".$iSch;
+#    print $order."\n";
+    system $order;
+
+    $order="rm WORK/Hypermetrics WORK/IncidentSchlafliSymbols WORK/SubGraphs WORK/SubGraphs-unicized";
+#    print $order."\n";
+    system $order;
+}
+
+$order="./RemoveByClasses";
+print $order."\n";
+system $order;
+
+open(INFILE, "WORK/ListClasses");
+@CLASSES=<INFILE>;
+close(INFILE);
+
+open(OUT, "> WORK/Classes");
+for ($iClas=1; $iClas<=scalar(@CLASSES); $iClas++)
+{
+    @L=split(" ", $CLASSES[$iClas-1]);
+    print OUT $SCH[$L[0]-1];
+}
+close(OUT);

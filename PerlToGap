@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+
+$uu=scalar(@ARGV);
+
+if ($uu ne 2)
+{
+    print "PerlToGap is used as\n";
+    print "PerlToGap [File] [Title]\n";
+    print "With [Title] a file in perl format\n";
+    print "output is a gap list with name [Title]\n";
+    die;
+}
+$File=$ARGV[0];
+$Title=$ARGV[1];
+
+open(INFILE, $File) or die "impossible to open ".$File;
+@ARR=<INFILE>;
+close(INFILE);
+
+
+print $Title.":=[";
+for ($iArr=1; $iArr<=scalar(@ARR); $iArr++)
+{
+    $_=$ARR[$iArr-1];
+    s/\n//;
+    @U=split(" ", $_);
+    print "[";
+    for ($iU=1; $iU<=scalar(@U); $iU++)
+    {
+	print $U[$iU-1];
+	if ($iU < scalar(@U))
+	{
+	    print ",";
+	}
+    }
+    print "]";
+    if ($iArr < scalar(@ARR))
+    {
+	print ",";
+    }
+
+}
+print "];\n";

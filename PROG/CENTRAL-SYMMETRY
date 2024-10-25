@@ -1,0 +1,56 @@
+#
+# This script do a removing of orbits which are degenerated
+
+Read("WORK-PERM/Gap-DESC-Symbol");;
+Read("WORK/ELT-CRACK");;
+Read("OUTPUT/ListVertices");
+
+HypDim:=7;
+Print("RUNNING CENTRAL-SYMMETRY\n");
+U:=[];
+for iCol in [1..HypDim]
+do
+  U[iCol]:=0;
+od;
+LISTBAS:=[];
+for iCol in [1..HypDim]
+do
+  U[iCol]:=1;
+  Add(LISTBAS, ShallowCopy(U));
+  U[iCol]:=0;
+od;
+
+output:=OutputTextFile("OUTPUT/DataCutFormat", true);;
+for iOrb in [1..Length(ELT)]
+do
+  LIST:=LISTVERT[iOrb];
+  CenterPolytope:=0;
+  for eElt in LIST
+  do
+    CenterPolytope:=CenterPolytope+eElt;
+  od;
+  CenterPolytope:=CenterPolytope/Length(LIST);
+  IsCentrallySymmetric:=1;
+  Pos:=1;
+  repeat
+    if not(2*CenterPolytope-LIST[Pos] in LIST) then
+      IsCentrallySymmetric:=0;
+    fi;
+    Pos:=Pos+1;
+  until IsCentrallySymmetric=0 or Pos=Length(LIST)+1;
+  #
+  AppendTo(output, "Delaunay polytope ", Length(LIST), " vertices");
+  if IsCentrallySymmetric=1 then
+    AppendTo(output, " centrally symmetric");
+  fi;
+  AppendTo(output, "\n");
+  for eLin in LIST
+  do
+    for iCol in [1..HypDim]
+    do
+      AppendTo(output, " ", eLin[iCol]);
+    od;
+    AppendTo(output, "\n");
+  od;
+od;
+CloseStream(output);

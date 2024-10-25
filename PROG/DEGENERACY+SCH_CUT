@@ -1,0 +1,84 @@
+#
+# This script do a removing of orbits which are degenerated
+
+Read("WORK-PERM/Gap-DESC");;
+Read("WORK/ELT-CRACK");;
+Read("WORK-PERM/CUTS");;
+Read("WORK-PERM/SCHLAFLI");;
+
+HypDim:=7;
+
+FoundS:=0;;
+Print("RUNNING Degeneracy + Schlafli-Cut selection\n");
+outputSch:=OutputTextFile("OUTPUT/WithSchlafli", true);;
+outputCut:=OutputTextFile("OUTPUT/WithoutSchlafli", true);;
+for eOrb in ELT
+do
+  FaceDefiningVector:=0;
+  for eVect in eOrb
+  do
+    FaceDefiningVector:=FaceDefiningVector+DESC[eVect];
+  od;
+  VSE:=0;
+  NbCut:=0;
+  for eCut in CUTS
+  do
+    if FaceDefiningVector*eCut=0 then
+      NbCut:=NbCut+1;
+      VSE:=VSE+eCut;
+    fi;
+  od;
+  ListSch:=[];
+  for iSc in [1..Length(SCHLAFLI)]
+  do
+    if SCHLAFLI[iSc]*FaceDefiningVector=0 then
+      Add(ListSch, iSc);
+    fi;
+  od;
+  if Length(ListSch) = 0 then 
+    if NbCut>=HypDim-1 then
+      D:=NullMat(HypDim, HypDim);
+      idx:=1;
+      for iCol in [1..HypDim-1]
+      do
+        for iLine in [iCol+1..HypDim]
+        do
+          D[iCol][iLine]:=VSE[idx];
+          D[iLine][iCol]:=VSE[idx];
+	  idx:=idx+1;
+        od;
+      od;
+      SecHD:=HypDim-1;
+      H:=NullMat(SecHD, SecHD);
+      for iCol in [1..SecHD]
+      do
+        for iLin in [1..SecHD]
+        do
+          H[iCol][iLin]:=D[iCol][iLin]-D[iCol][HypDim]-D[iLin][HypDim];
+        od;
+      od;
+      if (Determinant(H)<>0) then
+        for u in [1..Length(eOrb)]
+        do
+          AppendTo(outputCut, " ", eOrb[u]);
+        od;
+        AppendTo(outputCut, "\n");
+      fi;
+    fi;
+  else
+    FoundS:=FoundS+1;
+    outputOrbit:=OutputTextFile(Concatenation("WORK-orbit/IncidentSchlafli",String(FoundS)), true);
+    for iL in [1..Length(ListSch)]
+    do
+      AppendTo(outputOrbit, " ", ListSch[iL], "\n");
+    od;
+    CloseStream(outputOrbit);
+    for u in [1..Length(eOrb)]
+    do
+      AppendTo(outputSch, " ", eOrb[u]);
+    od;
+    AppendTo(outputSch, "\n");
+  fi;
+od;
+CloseStream(outputSch);
+CloseStream(outputCut);

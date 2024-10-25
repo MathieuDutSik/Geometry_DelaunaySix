@@ -1,0 +1,200 @@
+#!/usr/bin/perl
+
+# this script create a whole set of invariants used for 
+# data crunching
+
+
+$uu=scalar(@ARGV);
+if ($uu ne 3)
+{
+    print "This Script is used as\n";
+    print "ReduceProblemSize [Graph] [SubGraphFile] [DistanceMatrix]\n";
+    print "with [Graph] a file in Nauty format\n";
+    print "with [SubGraphFile] a list of vertex list of subgraphs\n";
+    print "with [DistanceMatrix] the distance Matrix of the graph\n";
+    print "and returns the file CrankedSubGraphs\n";
+    die;
+}
+
+$GraphFile=$ARGV[0];
+$SubGraphFile=$ARGV[1];
+$DistanceMatrixFile=$ARGV[2];
+
+open(INFILE, $GraphFile) or die "impossible to open ".$GraphFile;
+@GRAPH=<INFILE>;
+close(INFILE);
+@l=split("=", $GRAPH[0]);
+$GraphSize=$l[1]-1;
+
+open(INFILE, $SubGraphFile) or die "impossible to open ".$SubGraphFile;
+@SUBGRAPH=<INFILE>;
+close(INFILE);
+
+open(INFILE, $DistanceMatrixFile) or die "impossible to open ".$DistanceMatrixFile;
+@DISTMAT=<INFILE>;
+close(INFILE);
+
+for ($iSG=1; $iSG<=scalar(@SUBGRAPH); $iSG++)
+{
+    $_=$SUBGRAPH[$iSG-1];
+    s/\n//;
+    @UJ=split(" ", $_);
+    $nbAdj=1;
+    for ($iUJ=1; $iUJ<=scalar(@UJ)-1; $iUJ++)
+    {
+	@AdjI=split(" ", $DISTMAT[$UJ[$iUJ-1]-1]);
+	for ($jUJ=$iUJ+1; $jUJ<=scalar(@UJ); $jUJ++)
+	{
+	    if ($AdjI[$UJ[$jUJ-1]-1] eq 1)
+	    {
+		$nbAdj++;
+	    }
+	}
+    }
+    $nbtriple111=0;
+    $nbtriple112=0;
+    $nbtriple122=0;
+    for ($iUJ=1; $iUJ<=scalar(@UJ)-2; $iUJ++)
+    {
+	for ($jUJ=$iUJ+1; $jUJ<=scalar(@UJ)-1; $jUJ++)
+	{
+	    for ($kUJ=$jUJ+1; $kUJ<=scalar(@UJ); $kUJ++)
+	    {
+		@AdjI=split(" ", $DISTMAT[$UJ[$iUJ-1]-1]);
+		@AdjJ=split(" ", $DISTMAT[$UJ[$jUJ-1]-1]);
+		$DistanceIJ=$AdjI[$UJ[$jUJ-1]-1];
+		$DistanceIK=$AdjI[$UJ[$kUJ-1]-1];
+		$DistanceJK=$AdjJ[$UJ[$kUJ-1]-1];
+		$Sum=$DistanceIJ+$DistanceIK+$DistanceJK;
+		if ($Sum eq 3)
+		{
+		    $nbtriple111++;
+		}
+		if ($Sum eq 4)
+		{
+		    $nbtriple112++;
+		}
+		if ($Sum eq 5)
+		{
+		    $nbtriple122++;
+		}
+	    }
+	}
+    }
+    $INVARIANT[$iSG]=" nbAdj=".$nbAdj." 111=".$nbtriple111." 112=".$nbtriple112." 122=".$nbtriple122."\n";
+}
+
+
+
+for ($i=1; $i<=scalar(@SUBGRAPH); $i++)
+{
+    $IRRED[$i]=1;
+    $_=$SUBGRAPH[$i-1];
+    s/\n//;
+    $Name[$i]=$_;
+}
+
+
+
+
+# data stored then we crank out everything
+sub TestIsoSubGraphs($$)
+{
+    my ($Name1, $Name2) = @_;
+    
+    open(OUT, "> WORK/Zest");
+    print OUT "c -a -m\n";
+    print OUT "n=".$nb."\n";
+    print OUT "g\n";
+    print OUT "0 :".$Name1.";\n";
+    for ($iGR=1; $iGR<=$GraphSize; $iGR++)
+    {
+	print OUT $GRAPH[$iGR+1];
+    }
+    print OUT "x @\n";
+    print OUT "g\n";
+    print OUT "0 :".$Name2.";\n";
+    for ($iGR=1; $iGR<=$GraphSize; $iGR++)
+    {
+	print OUT $GRAPH[$iGR+1];
+    }
+    print OUT "x\n";
+    print OUT "##";
+    
+    #
+    #
+    # then launch nauty on the file to crank it.
+    $order="dreadnaut <WORK/Zest > OUTPUT/Internal.Results";
+#    print $order."\n";
+    system $order;
+    
+    open(INF, "OUTPUT/Internal.Results") or die "impossible to open the file";
+    @Bnauty=<INF>;
+    close(INF);
+    
+    $order="rm -f WORK/Zest OUTPUT/Internal.Results";
+#    print $order."\n";
+    system $order;
+
+    $line=$Bnauty[scalar(@INF)-1];
+    if ($line eq "h and h' are different.\n")
+    {
+	return "NO";
+    }
+    else
+    {
+	return "YES";
+    }
+}
+
+
+
+
+# data stored then we crank out everthing
+$nb=$GraphSize+1;
+for ($i=1; $i<=scalar(@SUBGRAPH)-1; $i++)
+{
+    if ($IRRED[$i] eq 1)
+    {
+	print "Considering SubGraph ".$Name[$i]."\n";
+	for ($j=$i+1; $j<=scalar(@SUBGRAPH); $j++)
+	{
+	    if ($INVARIANT[$i] eq $INVARIANT[$j] && $IRRED[$j] eq 1)
+	    {
+		$test=TestIsoSubGraphs($Name[$i], $Name[$j]);
+		if ($test eq "NO")
+		{
+		    print "The subgraphs ".$Name[$i]." and ".$Name[$j]." are NON ISOMORPH \n";
+		}
+		else
+		{
+		    print "The subgraphs ".$Name[$i]." and ".$Name[$j]." are isomorph\n";
+		    $IRRED[$j]=0; # we remove it from the list
+		}
+	    }
+	}
+    }
+}
+
+open(OUT, "> WORK/CrankedSubGraphs") or die "impossible to create WORK/CrankedSubGraphs";
+for ($iSG=1; $iSG<=scalar(@SUBGRAPH); $iSG++)
+{
+    if ($IRRED[$iSG] eq 1)
+    {
+	print OUT $SUBGRAPH[$iSG-1];
+    }
+}
+close(OUT);
+print "Output in file WORK/CrankedSubGraphs\n";
+
+open(OUT, "> WORK/CrankedInvariants") or die "impossible to create WORK/CrankedInvariants";
+for ($iSG=1; $iSG<=scalar(@SUBGRAPH); $iSG++)
+{
+    if ($IRRED[$iSG] eq 1)
+    {
+	print OUT $INVARIANT[$iSG];
+    }
+}
+close(OUT);
+print "Output in file WORK/CrankedInvariants\n";
+

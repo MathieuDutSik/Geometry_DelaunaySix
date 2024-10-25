@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+
+# This script remove the first 0
+# at the beginning and remove also the
+# vector containing one zero
+
+for (<>)
+{
+    $line=$_;
+    s/\n//;
+    @LE=split(" ", $_);
+
+    @LS=sort {$a<=>$b} @LE;
+
+    for ($i=1; $i<=scalar(@LS); $i++)
+    {
+	print " ".$LS[$i-1];
+    }
+    print "\n";
+}
